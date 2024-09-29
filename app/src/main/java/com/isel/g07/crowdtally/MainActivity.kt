@@ -5,17 +5,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.isel.g07.crowdtally.ui.theme.CrowdTallyTheme
+import com.isel.g07.crowdtally.ui.views.CountingView
+import com.isel.g07.crowdtally.ui.views.SettingsView
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,41 +28,54 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppLayout() {
     CrowdTallyTheme {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            var count by remember { mutableStateOf(0) }
+        var value by rememberSaveable { mutableStateOf(0) }
+        var min by rememberSaveable { mutableStateOf(0) }
+        var max by rememberSaveable { mutableStateOf(100) }
+        var settings by rememberSaveable { mutableStateOf(false) }
 
-            fun increment() {
-                count++;
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.app_name)) },
+                    navigationIcon = {
+                        if (settings)
+                            IconButton(onClick = { settings = false }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.back)
+                                )
+                            }
+                    },
+                    actions = {
+                        if (!settings)
+                            IconButton(onClick = { settings = true }) {
+                                Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.settings))
+                            }
+                    }
+                )
             }
-
-            fun decrement() {
-                if (count <= 0)
-                    return;
-
-                count--;
-            }
-
-            Column(modifier = Modifier.fillMaxSize().padding(innerPadding), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Text("$count", fontSize = 60.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(16.dp))
-                Controls(increment = { increment() }, decrement = { decrement() })
-            }
-        }
-    }
-}
-
-@Composable
-fun Controls(increment: () -> Unit, decrement: () -> Unit) {
-    Row {
-        Button(modifier = Modifier.size(60.dp), onClick = decrement) {
-            Text("-", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        }
-        Spacer(modifier = Modifier.width(20.dp))
-        Button(modifier = Modifier.size(60.dp), onClick = increment) {
-            Text("+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        ) { innerPadding ->
+            if (!settings)
+                CountingView(
+                    value = value,
+                    min = min,
+                    max = max,
+                    increment = { value = value.inc() },
+                    decrement = { value = value.dec() },
+                    modifier = Modifier.padding(innerPadding)
+                )
+            else
+                SettingsView(
+                    min = min,
+                    max = max,
+                    setMin = { min = it; value = min },
+                    setMax = { max = it; value = min },
+                    modifier = Modifier.padding(innerPadding)
+                )
         }
     }
 }
